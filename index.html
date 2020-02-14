@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <title>Valentine 2020</title>
+        <script src="https://d3js.org/d3.v5.min.js"></script>
+        <script src="https://d3js.org/d3-timer.v1.min.js"></script>
+        <script src="https://d3js.org/d3-ease.v1.min.js"></script>
+        <style>
+            #viewport {
+                position: fixed;
+                left: 0px;
+                right: 0px;
+                top: 0px;
+                bottom: 0px;
+                background-color: indigo;
+            }
+
+            text {
+                font-family: sans-serif;
+                text-anchor: middle;
+                user-select: none;
+            }
+
+            #changeColor {
+                fill: #FFFFFFFF;
+                z-index: 10;
+                font-size: 20px;
+                opacity: 0.2;
+            }
+
+            .heart {
+                opacity: 0;
+            }
+
+            .cupid {
+                opacity: 0;
+            }
+        </style>
+    </head>
+
+    <body>
+        
+        <div id='viewport'></div>
+
+        <script>
+            var msgText = [
+                ['I love you,', 'my Valentine!'],
+                ['My heart', 'belongs to you'],
+                ['I miss you']
+            ];
+            var i = 0;
+            
+            var viewportDiv = document.getElementById('viewport');
+            var width = viewportDiv.clientWidth;
+            var height = viewportDiv.clientHeight;
+            var n = 30;
+            
+            // Hearts will occcupy 50% of screen space
+            // Original heart space 358000 (575x640)
+            var scHeart = Math.sqrt(width * height * 0.5 / (n * 358000))
+            // Vertical adjustment (the hearts must hide above the edge before they start moving)
+            var adjHeart = 575 * scHeart * 1.25 + 5
+            
+            // Cupids will occupy 50% of screen space
+            // Original cupid is 1000000 (1000x1000)
+            var scCupid = 2 * Math.sqrt(width * height * 0.5 / (n * 1000000))
+            // Vertical adjustment (the hearts must hide above the edge before they start moving)
+            var adjCupid = 1000 * scCupid * 1.25 + 5
+
+            var heartColor = '#FF0000'
+
+            var hearts = [];
+            var cupids = [];
+
+            var svg = d3.select('#viewport')
+                        .append('svg')
+                            .attr('width', width)
+                            .attr('height', height);
+
+            // Appending a message
+            svg.append('g')
+                    .attr('id', 'msg')
+                    .attr('opacity', 0)
+                .append('text')
+                    .attr('fill', heartColor)
+                    .attr('x', width/2)
+                    .attr('y', height/2)
+                    .style('font-size', '1px')
+                    .style('font-weight', 'bold');
+            
+            function updateMsg () {
+                var msg = d3.select('#msg').select('text');
+                
+                msg.selectAll('tspan').remove();
+                
+                msg.style('font-size', '1px')
+                    .selectAll('tspan')
+                    .data(msgText[i])
+                    .enter()
+                    .append('tspan')
+                        .text(d => d)
+                        .attr('x', width/2)
+                        .attr('y', height/2)
+                        .attr('dy', (d, i) => 1.2 * i + 'em')
+
+                var smallBox = msg.node().getBoundingClientRect();
+                var msgScale = Math.min(width/smallBox.width, height/smallBox.height);
+                d3.select('#msg').select('text')
+                    .style('font-size', msgScale + 'px')
+
+                var bigBox = msg.node().getBoundingClientRect();
+                msg.attr('transform', 'translate(0,' + -bigBox.height/2 + ')')
+                
+                i = (i + 1) % 3
+            }
+
+
+            function flashMessage(callback) {
+                d3.select('#msg')
+                    .transition()
+                        .duration(200)
+                        .ease(d3.easeCubicInOut)
+                        .attr('opacity', 1)
+                    .transition()
+                        .delay(750)
+                        .duration(1500)
+                        .ease(d3.easeSinInOut)
+                        .attr('opacity', 0)
+                    .transition()
+                        .delay(150)
+                        .duration(200)
+                        .ease(d3.easeCubicInOut)
+                        .attr('opacity', 1)
+                    .transition()
+                        .delay(750)
+                        .duration(2000)
+                        .ease(d3.easeSinInOut)
+                        .attr('opacity', 0)
+                    .transition()
+                        .delay(150)
+                        .duration(200)
+                        .ease(d3.easeCubicInOut)
+                        .attr('opacity', 1)
+                        .on('end', callback)
+                    .transition()
+                        .delay(1500)
+                        .duration(4000)
+                        .ease(d3.easeSinInOut)
+                        .attr('opacity', 0)
+                    
+                updateMsg();
+            }
+
+            svg.append('g')
+                    .attr('id', 'changeColor')
+               .append('rect')
+                    .attr('x', width / 2 - 125)
+                    .attr('y', height - 60)
+                    .attr('height', 40)
+                    .attr('width', 250)
+                    .attr('rx', 6)
+                    .attr('rx', 6)
+            
+            d3.select('#changeColor')
+                .append('text')
+                    .text("Please, change the colors")
+                    .attr('x', width / 2)
+                    .attr('y', height - 34)
+                    .attr('fill', getComputedStyle(viewportDiv).backgroundColor)
+
+            d3.select('#changeColor')
+                .on('click', function() {
+                    var hc = {r: Math.random() * 255,
+                              g: Math.random() * 255,
+                              b: Math.random() * 255}
+                    var bc = {r: Math.random() * 255,
+                              g: Math.random() * 255,
+                              b: Math.random() * 255}
+                    
+                    window.heartColor = 'rgb(' + hc.r + ',' + hc.g + ',' + hc.b + ')'
+
+                    d3.select('#changeColor')
+                        .style('opacity', 0.5)
+                        .transition()
+                            .delay(1000)
+                            .duration(1500)
+                            .style('opacity', 0.2)
+                    
+                    d3.select('#msg').select('text')
+                        .transition()
+                            .duration(1000)
+                            .style('fill', heartColor)
+                    d3.selectAll('.heart').selectAll('path')
+                        .transition()
+                            .duration(1000)
+                            .style('fill', heartColor)
+                    d3.selectAll('.cupid').selectAll('path')
+                        .transition()
+                            .duration(1000)
+                            .style('fill', heartColor)
+                    d3.select('#viewport')
+                        .transition()
+                            .duration(1000)
+                            .style('background-color', 'rgb(' + bc.r + ', ' + bc.g + ', ' + bc.b + ')')
+                    d3.select('#changeColor').select('text')
+                        .transition()
+                            .duration(1000)
+                            .style('fill', 'rgb(' + bc.r + ', ' + bc.g + ', ' + bc.b + ')')
+                })
+            
+            // Drop hearts
+            function initHearts() {
+                hearts = [];
+                for (var i = 0; i < n; i++) {
+                    var heart = {scale: Math.random() * 0.5 + 0.75,
+                                 dur: Math.random() * 5000 + 10000 * Math.sqrt(height / width),
+                                 delay: Math.random() * (10000 * Math.sqrt(height / width) + 2500),
+                                 opacity: Math.random() * 0.3 + 0.3};
+                    heart['x'] = Math.floor(Math.random() * (width - scHeart * heart.scale * 640)),
+                                
+                    hearts.push(heart);
+                }
+
+                svg.selectAll('.heart')
+                        .data(hearts)
+                        .enter()
+                        .append('g')
+                            .classed('heart', true)
+                            .attr('transform', d => 'translate(' + d.x + ', ' + -adjHeart + ')')
+                            .attr('fill', window.heartColor)
+                        .append('path')
+                            .attr('d', "M 297.29747,550.86823 C 283.52243,535.43191 249.1268,505.33855 220.86277,483.99412 C 137.11867,420.75228 125.72108,411.5999 91.719238,380.29088 C 29.03471,322.57071 2.413622,264.58086 2.5048478,185.95124 C 2.5493594,147.56739 5.1656152,132.77929 15.914734,110.15398 C 34.151433,71.768267 61.014996,43.244667 95.360052,25.799457 C 119.68545,13.443675 131.6827,7.9542046 172.30448,7.7296236 C 214.79777,7.4947896 223.74311,12.449347 248.73919,26.181459 C 279.1637,42.895777 310.47909,78.617167 316.95242,103.99205 L 320.95052,119.66445 L 330.81015,98.079942 C 386.52632,-23.892986 564.40851,-22.06811 626.31244,101.11153 C 645.95011,140.18758 648.10608,223.6247 630.69256,270.6244 C 607.97729,331.93377 565.31255,378.67493 466.68622,450.30098 C 402.0054,497.27462 328.80148,568.34684 323.70555,578.32901 C 317.79007,589.91654 323.42339,580.14491 297.29747,550.86823 z")
+                            .attr('transform', d => 'scale(' + scHeart * d.scale + ')');
+            }
+
+            function dropHeart(thisHeart, nextAction) {
+                var heart = d3.select(thisHeart);
+
+                setTimeout(function() {
+                    repeat();   
+                }, heart.datum().delay);
+
+                function repeat() {
+                    heart
+                        .attr('transform', d => 'translate(' + d.x + ', ' + -adjHeart + ')')
+                        .style('opacity', d => d.opacity)
+                        .transition()
+                            .ease(d3.easeLinear)
+                            .duration(d => d.dur)
+                            .attr('transform', d => 'translate(' + d.x + ', ' + (height + 1) +')')
+                            .on('end', repeat);
+                }
+
+                function tapHeart() {
+                    d3.select(this)
+                        .style('opacity', 1)
+                        .transition()
+                            .style('opacity', 0)
+                            .duration(1500)
+                            .ease(d3.easeQuadIn)
+                            .on('end', function(d) {
+                                this.remove()
+                                if (d3.selectAll('.heart').size() == 0 && d3.selectAll('.cupid').size() == 0) {
+                                    flashMessage(nextAction);
+                                }
+                            })
+                }
+
+                heart.on('click', tapHeart)
+            }
+
+            function dropHearts() {
+                initHearts();
+
+                d3.selectAll('.heart')
+                    .each(function(d) { dropHeart(this, releaseCupids) });
+            }
+
+            // Release cupids
+            function initCupids() {
+                cupids = [];
+                for (var i = 0; i < n; i++) {
+                    var cupid = {scale: Math.random() * 0.5 + 0.75,
+                                 dur: Math.random() * 5000 + 10000 * Math.sqrt(width / height),
+                                 delay: Math.random() * (10000 * Math.sqrt(width / height) + 2500),
+                                 opacity: Math.random() * 0.3 + 0.3,
+                                 dir: Math.round(Math.random())};
+                    cupid['y'] = Math.floor(Math.random() * (height - scCupid * cupid.scale * 1000)),
+                                
+                    cupids.push(cupid);
+                }
+
+                svg.selectAll('.cupid')
+                        .data(cupids)
+                        .enter()
+                        .append('g')
+                            .classed('cupid', true)
+                            .attr('transform', d => 'translate(' + (d.dir ? -adjCupid : (width + adjCupid)) + ', ' + d.y + ')')
+                            .attr('fill', window.heartColor)
+                        .append('path')
+                            .attr('d', "M10,634.4c0,0,19.1,8.6,42.8,12.8c9.3,1.7,16.3-8.5,13-17.9c-1.6-4.7-4.9-7.1-7.6-8.4l14.9-5.2c1.8,0.7,4.3,0.8,6.8-0.1c2.7-1,4.9-2.6,5.8-4.4l130.6-45.8c-1.7,1.8-2.6,3.8-1.8,5.8c3.1,8.6,4.9,7.8,4.9,7.8s0,4.3,2,8.6c1.9,4.4,4.7,5.1,4.7,5.1s0.5,4.3,1.8,7c1.4,2.7,4.9,4.3,4.9,4.3s0.7,2.3,1.9,4.1c1.2,2,4,2.8,7,4.7c1.5,0.9,5.1,1.2,9.3,1.2l12.2,37.4c0,0-14.9,25.2-0.9,70.1c15.5,49.7,78.1,49.9,90.4,88.4c10,31.2-14.1,43-14.1,43s36.9-10.4,17.9-53.9c-0.4-0.8-0.8-1.8-1.2-2.6c0.1-0.2,0.2-0.5,0.2-0.8l42.5-218.9c2-2.1,3.6-4.1,4.9-5.1c2.9-2.2,23.3-11.7,32.9-18.4c6.5-4.6,18.2-15.9,25.1-22.7c1.3,3.6,48.4,72.4,97.1,97.9c23.6,12.3,52.8,17.7,77.7,17.5c22.6-0.3,44.2-9.3,63.9-19.4c6.3,3.9,21.5,12.6,41.5,19.2c26.5,8.8,55.4,6.9,79.5,3.2c24.1-3.7,45.7-14.3,62-17.7c16.3-3.4,19.3-4.6,30.7-1.9c11.4,2.8,15.5,10.9,22.4,15.8c6.9,4.9,16.5,12.9,16.5,12.9s3.6,2.4,5.4,2.3c1.8,0,7.2-0.2,7.2-0.2s2,2.3,4.6,1.4c3.1-1.2,4.1-5.6,4.1-5.6s0.5,2.3,0.8,3.1c0.5,0.8,1.9,2,9.3-1.6c7.4-3.6,6.5-17.8,5.9-20.8c-0.6-3-1.8-17.4-8-27.6c-6.3-10.3-21.3-19.2-26.4-23.4c-5.1-4.2-14.5-17.3-28.6-27.8c-14.1-10.5-28.5-4.2-34.5,0.8c-6.1,4.9-4.9,14.1-4.9,14.1s-0.8,0.2-2.6,0.8c-1.7,0.6-2.8,2.7-2.8,2.7s-2.3-1.8-3.8-1.8c-1.5,0-3.9-0.9-6.8-0.7c-2.9,0.3-28.5-5.7-39.8-5.3c-11.4,0.4-17.3,5.5-17.3,5.5s-4.8-2.9-7.8-6.3c-1.4-1.7-4.2-3.7-6.7-5.4c10.7-12.3,15.1-19.6,16-21.1c0.9-1.5,3.9-8.7,3.9-8.7l-0.4,0c10.9-4.6,26.9-12.3,35.1-21.5c11.2-12.7,41.8-53.5,50.1-85.4c8.2-31.9,1.6-46-2.2-62.6c-3.8-16.6-16.3-46.4-16.3-46.4s5-10.5,8.5-17.9c3.5-7.5,9.2-24.4,13.3-34.3c4.1-9.8,9.1-15.8,14.1-22.6c5-6.7,6.4-12.8,0.4-15.8c-3.2-1.7-7.8,1.6-7.8,1.6s-0.8-2.3-3.7-3.1c-3-0.8-5.8,1.2-5.8,1.2s-0.9-2.4-3.4-2.8c-2.4-0.3-5.1,1.2-5.1,1.2s-2.3-1.7-4.1-2c-1.9-0.3-4.2,1.9-4.2,1.9s-4.8,0.3-6.2,0.3c-1.5,0-10.1,10.1-14.2,14.6c-4.2,4.5-16.4,26.6-20.7,30.4s-18.3,8.9-25.9,15.6c-7.5,6.7-15.5,21.4-9.7,33.6c5.8,12.2,17.9,10,17.9,10s0,2.1,0.3,2.9c0.4,0.8,2.6,1.8,2.6,1.8s-5.2,16.1-3.4,31.2c1.8,15.2,6.9,30.9,6.9,30.9s-7.6,3.9-16.2,7.6c-6.1,2.6-16.6,5.5-16.6,5.5s-1.4-1.9-7.1-2.6c-5.7-0.7-5.4,0.1-5.4,0.1s-5.2-3.3-6.8-2.9c-1.6,0.4-2.5,0.2-2.5,0.2s-22.1-19.9-55-15.7c-28.8,3.7-30.9,9.4-30.9,9.4s-6-0.1-11.4,1.9c-5.5,2-10.7,4.7-10.7,4.7s-5.7-3.9-9.1-2.4c-3.4,1.6-5.2,3.4-5.2,3.4s-3.8-2.1-9.8-3.7c-5.9-1.6-11.4-4.4-11.4-4.4s-7.3-4-13-4.8l-9.6-1.5l-0.3-0.2c4.4-0.7,9.6-1.7,11-3c2.8-2.5,0.8-7.6,0.8-7.6s13.6,2.8,19.5-7.4c3.5-6.2-8.4-18.5-8.4-18.5s15.5-3.9,20.3-18.4c3.7-11-7.2-18.4-7.2-18.4s4.9-1.1,15.8-8.5c11-7.4,11.7-17.2,10.6-22.1c-1.1-4.9-12.7-3.4-12.7-3.4s16.4-7.5,26.5-18.8c7-7.8,3.9-21.7,3.1-23.4c-0.7-1.6-7.4-0.1-7.4-0.1s8.3-9,12.8-17.1c4.4-8.1,5.1-21.2,2.7-23.7c-2.4-2.4-7.7,5.1-9.9,8.6c-2.2,3.5-9.2,9.9-9.2,9.9s10.4-22.4,11.9-35.4c1.5-13-6.6-28.5-12.2-27.2c-5.7,1.3-4.1,12.4-6.4,21.9c-2.3,9.4-6.9,16.7-6.9,16.7s1.2-9.2,1-14.7c-0.1-5.6-5.7-16.6-7.8-16c-2.2,0.5,10.8,25.7-34,82.8c-12.3,15.7-42,36.8-43.3,43.7c-1.3,7,13.5,19.9,1.9,62.7c-4.9,17.8-22.9,27.3-34.2,31.6c-13,0.6-19,0.9-21.5,1.3c-3.8-2.2-13.9-5.7-13.9-5.7s10.2-3.8,12.6-16.3c2.3-12.5-6.9-20.3-6.9-20.3s12.5-13.3,12.4-28.1c0-9-3.5-18.5-3.5-18.5s4,7.6,6.4,6.7c2.4-0.9,2.6-11-0.7-22.1c-3.3-11.1-10.6-28-10.6-28s2.4,2,5.5-0.6c3.1-2.5-8.8-29.9-33.4-52.8c-24.6-22.9-53.4-20.7-53.4-20.7s1.3-0.7,7-0.1c5.7,0.5,7.4-2.1,7.4-2.1s-5.2-3.3-13.1-3.6c-7.9-0.4-17.7,0.7-17.7,0.7s4.3-3.9,7-6.8c2.7-2.8,13.7-4.7,13.7-4.7s-8.5-1.7-16,1.5c-7.4,3.2-11.5,8.2-11.5,8.2s-0.8-6.8-10.8-17.9c-10-11.1-24.9-6.5-24.9-6.5s8.1,0,15.9,10.8c2.9,4.1,6.4,13.3,6.4,13.3s-2.7-2.4-7.9-3.7c-5.1-1.5-17.6-2.3-17.6-2.3s2,2.1,8.8,2.8c6.8,0.7,14.2,6.7,14.2,6.7s-13.5-0.6-20.4,1.8c-6.9,2.3-12.7,6.2-12.7,6.2s-13.9-0.9-32,10.7c-18.1,11.6-38.2,51.9-51.8,56.9c-13.7,5-28.9-4.4-31.1-2.8c-2.1,1.5,2.8,39.3,41,42h-0.5c0,0-5.5,6.8-6.9,11.8c-1.4,5-0.9,8.9-2.3,12.4c-2.2,5.2-4.4,6.1-4.4,6.1s2.6,1.4,7.3-3.7c1.6-1.7,3.5-4,4.7-5.3c-0.4,5.8,5.5,34.1,7.2,38.6c6.5,16.3,11,26.6,14.1,33.1c0.8,1.8,1.8,3.8,2.8,5.6c1.6,3.1,2.6,4.5,3,5l0.3,0.3c-0.7,0.9-9.4,12.6-5,23.2c4.6,11,12.7,15.6,15.7,18.1c3,2.5,6.5,7.8,11.4,11.7c5,3.8,9.5,7.6,11.5,9.8c2,2.2,9.4,8.4,17,10c5.3,1.2,12.5-3.6,12.5-3.6s7.8,6.2,16.8,6c9-0.2,11.5-2.3,11.5-2.3s-3.3,4.9-5.2,7.1c-1.9,2.3-7,7.6-7,7.6s-8.6,6.6-12.1,11.4L202.6,340.9c-11.4-44.4-46.5-30.9-46.5-30.9s26.4-4.9,37.2,25.9c13.3,38.1-36.5,76-19,125c15.8,44.2,42.9,55.4,42.9,55.4l13.5,39.2l-145.6,51c-1.7-1.3-4.9-1.6-8.1-0.6c-3.4,1.1-5.9,3.4-6.3,5.6l-15.9,5.6c1.9-2.5,4.5-7.2,2.4-13.5c-3.3-9.3-14.7-12.9-21.3-6.1C17.8,616.7,10,634.4,10,634.4z M275.8,649.8L264.5,613c16.9-2.8,26.4-13.7,26.4-13.7s36.3-0.5,52.7-2c16.3-1.5,41.2-11,46.6-13.7c0.9-0.5,1.8-1,2.6-1.7L352,791.1c-17.5-24-55.9-22.5-78-76C260,681,275.8,649.8,275.8,649.8z M228.1,510.5c0,0-31.4-15.4-40.8-51.1c-15.3-58.7,20-79.9,16.3-111.9l186.9,150.1l0.1,2.3l0.1,4.4c-1.8,1.5-13.2,10.2-17.2,12.9c-4.3,2.8-20.1,11.9-20.1,11.9s-17.8,0-30.3,3.6c-12.5,3.6-37.8,16.2-40.8,16.5c-1.4,0.1-4.4-2.1-9.2-3.6l117.4-41.1l0-4.6l-127.2,44.6c-3.3,0.2-7,0.9-11.2,2.5c-3.8,1.3-6.8,2.9-9.3,4.2L228.1,510.5z")
+                            .attr('transform', d => 'scale(' + (d.dir ? -1 : 1) * scCupid * d.scale + ',' + scCupid * d.scale + ')');
+            }
+
+            function releaseCupid(thisCupid, nextAction) {
+                var cupid = d3.select(thisCupid);
+
+                setTimeout(function() {
+                    repeat();   
+                }, cupid.datum().delay);
+
+                function repeat() {
+                    cupid
+                        .attr('transform', d => 'translate(' + (d.dir ? -adjCupid : (width + adjCupid)) + ', ' + d.y + ')')
+                        .style('opacity', d => d.opacity)
+                        .transition()
+                            .ease(d3.easeLinear)
+                            .duration(d => d.dur)
+                            .attr('transform', d => 'translate(' + (d.dir ? (width + adjCupid) : -adjCupid)  + ', ' + d.y +')')
+                            .on('end', repeat);
+                }
+
+                function tapCupid() {
+                    d3.select(this)
+                        .style('opacity', 1)
+                        .transition()
+                            .style('opacity', 0)
+                            .duration(1500)
+                            .ease(d3.easeQuadIn)
+                            .on('end', function(d) {
+                                this.remove()
+                                if (d3.selectAll('.cupid').size() == 0 && d3.selectAll('.heart').size() == 0) {
+                                    flashMessage(nextAction);
+                            }
+                        })
+                }
+
+                cupid.on('click', tapCupid)
+            }
+
+            function releaseCupids() {
+                initCupids();
+
+                d3.selectAll('.cupid')
+                    .each(function(d) { releaseCupid(this, releaseAll) });
+            }
+
+            function releaseAll() {
+                initHearts();
+                initCupids();
+
+                d3.selectAll('.heart')
+                    .each(function(d) { dropHeart(this, dropHearts) });
+                d3.selectAll('.cupid')
+                    .each(function(d) { releaseCupid(this, dropHearts) });
+            }
+
+            dropHearts()
+        </script>
+    </body>
+
+</html>
